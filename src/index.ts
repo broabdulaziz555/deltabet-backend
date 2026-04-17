@@ -8,12 +8,18 @@ import { startCronJobs } from './jobs/cron';
 import { prisma } from './config/database';
 import { redis } from './config/redis';
 import { env } from './config/env';
+import { execSync } from 'child_process';
 
 const PORT = parseInt(env.PORT, 10);
 const httpServer = createServer(app);
 
 async function bootstrap() {
   try {
+    // Run migrations first, wait for completion
+    console.log('Running database migrations...');
+    execSync('npx prisma db push --accept-data-loss', { stdio: 'inherit' });
+    console.log('✅ Database migrations done');
+
     await prisma.$connect();
     console.log('✅ Database connected');
 
@@ -28,8 +34,6 @@ async function bootstrap() {
 
     httpServer.listen(PORT, '0.0.0.0', () => {
       console.log(`🚀 DeltaBet API running on port ${PORT}`);
-      console.log(`   Admin panel: http://localhost:${PORT}/adminpanel`);
-      console.log(`   Health:      http://localhost:${PORT}/health`);
     });
   } catch (err) {
     console.error('❌ Bootstrap failed:', err);
@@ -40,7 +44,6 @@ async function bootstrap() {
 bootstrap();
 
 process.on('SIGTERM', async () => {
-  console.log('SIGTERM received, shutting down gracefully...');
   await GameEngine.getInstance().stop();
   await prisma.$disconnect();
   await redis.quit();
