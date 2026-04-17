@@ -18,4 +18,4 @@ COPY --from=builder /app/prisma ./prisma
 COPY package*.json ./
 RUN mkdir -p uploads
 EXPOSE 3000
-CMD ["/bin/sh", "-c", "npx prisma migrate deploy && npx prisma db push && node dist/index.js"]
+CMD ["/bin/sh", "-c", "npx prisma db push --accept-data-loss && node dist/index.js"]
