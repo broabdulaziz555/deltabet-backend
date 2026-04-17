@@ -18,5 +18,4 @@ COPY --from=builder /app/prisma ./prisma
 COPY package*.json ./
 RUN mkdir -p uploads
 EXPOSE 3000
-ENTRYPOINT ["dumb-init", "--"]
-CMD npx prisma migrate deploy && node dist/index.js
+CMD ["/bin/sh", "-c", "npx prisma migrate deploy && npx prisma db push && node dist/index.js"]
