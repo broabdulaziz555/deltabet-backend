@@ -14,6 +14,7 @@ import adminRoutes from './routes/admin';
 import { env } from './config/env';
 
 export const app = express();
+app.set('trust proxy', 1);
 
 // ── Security ──────────────────────────────────────────────────
 app.use(helmet({ contentSecurityPolicy: false }));
