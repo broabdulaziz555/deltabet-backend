@@ -1,0 +1,275 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               Int               @id @default(autoincrement())
+  username         String            @unique @db.VarChar(50)
+  passwordHash     String
+  accountType      AccountType       @default(REAL)
+  balance          BigInt            @default(0)
+  bonusBalance     BigInt            @default(0)
+  lang             String            @default("uz") @db.VarChar(5)
+  isActive         Boolean           @default(true)
+  isChatBanned     Boolean           @default(false)
+  chatBanUntil     DateTime?
+  clientSeed       String            @default(dbgenerated("substr(md5(random()::text), 1, 32)"))
+  referralCode     String            @unique @default(dbgenerated("substr(md5(random()::text), 1, 8)"))
+  referredById     Int?
+  referredBy       User?             @relation("UserReferrals", fields: [referredById], references: [id])
+  referrals        User[]            @relation("UserReferrals")
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  lastSeenAt       DateTime          @default(now())
+  bets             Bet[]
+  transactions     Transaction[]
+  chatMessages     ChatMessage[]
+  ipLogs           IpLog[]
+  bonusGrants      BonusGrant[]
+  referralEarnings ReferralEarning[]
+  balanceLogs      BalanceLog[]
+}
+
+enum AccountType {
+  REAL
+  DEMO
+}
+
+model Round {
+  id              Int         @id @default(autoincrement())
+  serverSeed      String
+  serverSeedHash  String
+  nonce           Int
+  crashPointReal  Float
+  crashPointDemo  Float
+  startedAt       DateTime?
+  crashedAt       DateTime?
+  status          RoundStatus @default(WAITING)
+  totalBetsReal   BigInt      @default(0)
+  totalPayoutReal BigInt      @default(0)
+  totalBetsDemo   BigInt      @default(0)
+  totalPayoutDemo BigInt      @default(0)
+  createdAt       DateTime    @default(now())
+  bets            Bet[]
+
+  @@index([status])
+  @@index([createdAt(sort: Desc)])
+}
+
+enum RoundStatus {
+  WAITING
+  FLYING
+  CRASHED
+}
+
+model Bet {
+  id                Int       @id @default(autoincrement())
+  userId            Int
+  roundId           Int
+  panelSlot         Int
+  betAmount         BigInt
+  usedBonus         BigInt    @default(0)
+  autoCashout       Float?
+  cashedOut         Boolean   @default(false)
+  cashoutMultiplier Float?
+  winAmount         BigInt?
+  placedAt          DateTime  @default(now())
+  cashedOutAt       DateTime?
+  user              User      @relation(fields: [userId], references: [id])
+  round             Round     @relation(fields: [roundId], references: [id])
+
+  @@unique([userId, roundId, panelSlot])
+  @@index([roundId])
+  @@index([userId])
+}
+
+model Transaction {
+  id           Int            @id @default(autoincrement())
+  userId       Int
+  type         TxType
+  amount       BigInt
+  method       PaymentMethod?
+  status       TxStatus       @default(PENDING)
+  cardId       Int?
+  cardNumber   String?
+  cardHolder   String?
+  chequeFile   String?
+  promoCode    String?
+  bonusGrantId Int?
+  adminNote    String?
+  processedAt  DateTime?
+  processedBy  Int?
+  createdAt    DateTime       @default(now())
+  user         User           @relation(fields: [userId], references: [id])
+  card         P2PCard?       @relation(fields: [cardId], references: [id])
+  bonusGrant   BonusGrant?    @relation(fields: [bonusGrantId], references: [id])
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt(sort: Desc)])
+}
+
+enum TxType {
+  DEPOSIT
+  WITHDRAWAL
+}
+
+enum TxStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum PaymentMethod {
+  CLICK
+  PAYME
+  PAYNET
+  HUMO
+  UZCARD
+}
+
+model P2PCard {
+  id           Int            @id @default(autoincrement())
+  cardNumber   String
+  ownerName    String
+  method       PaymentMethod
+  dailyLimit   BigInt         @default(10000000)
+  usedToday    BigInt         @default(0)
+  isActive     Boolean        @default(true)
+  lastResetAt  DateTime       @default(now())
+  createdAt    DateTime       @default(now())
+  transactions Transaction[]
+}
+
+model PromoCode {
+  id                 Int          @id @default(autoincrement())
+  code               String       @unique @db.VarChar(50)
+  type               PromoType
+  value              Float
+  maxBonusUZS        BigInt?
+  wageringMultiplier Float        @default(3)
+  expiresAt          DateTime?
+  isActive           Boolean      @default(true)
+  usageCount         Int          @default(0)
+  maxUsage           Int?
+  createdAt          DateTime     @default(now())
+  createdBy          Int
+  bonusGrants        BonusGrant[]
+}
+
+enum PromoType {
+  DEPOSIT_MATCH
+  FIXED_CREDIT
+  REFERRAL
+}
+
+model BonusGrant {
+  id               Int          @id @default(autoincrement())
+  userId           Int
+  promoCodeId      Int?
+  type             PromoType
+  bonusAmount      BigInt
+  wageringRequired BigInt
+  wageringProgress BigInt       @default(0)
+  isConverted      Boolean      @default(false)
+  convertedAt      DateTime?
+  expiresAt        DateTime?
+  createdAt        DateTime     @default(now())
+  user             User         @relation(fields: [userId], references: [id])
+  promoCode        PromoCode?   @relation(fields: [promoCodeId], references: [id])
+  transactions     Transaction[]
+
+  @@index([userId])
+  @@index([isConverted])
+}
+
+model ReferralEarning {
+  id          Int      @id @default(autoincrement())
+  referrerId  Int
+  referredId  Int
+  roundId     Int
+  houseProfit BigInt
+  commission  BigInt
+  isPaid      Boolean  @default(false)
+  paidAt      DateTime?
+  createdAt   DateTime @default(now())
+  referrer    User     @relation(fields: [referrerId], references: [id])
+
+  @@index([referrerId])
+  @@index([isPaid])
+}
+
+model ChatMessage {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  message   String   @db.VarChar(200)
+  isDeleted Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([createdAt(sort: Desc)])
+}
+
+model AdminUser {
+  id           Int       @id @default(autoincrement())
+  username     String    @unique @db.VarChar(30)
+  passwordHash String
+  role         AdminRole @default(SUPPORT)
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  lastLoginAt  DateTime?
+}
+
+enum AdminRole {
+  SUPERADMIN
+  MANAGER
+  SUPPORT
+}
+
+model GameConfig {
+  id              Int     @id @default(1)
+  minBet          BigInt  @default(2000)
+  maxBet          BigInt  @default(5000000)
+  waitingPhaseSec Int     @default(5)
+  houseEdgePct    Float   @default(5.0)
+  isGameRunning   Boolean @default(true)
+  motivationFreq  Int     @default(10)
+}
+
+model ServerSeed {
+  id         Int      @id @default(autoincrement())
+  seed       String
+  seedHash   String
+  isActive   Boolean  @default(false)
+  revealedAt DateTime?
+  createdAt  DateTime @default(now())
+}
+
+model IpLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  ip        String
+  userAgent String?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+model BalanceLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  adminId   Int?
+  before    BigInt
+  after     BigInt
+  reason    String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
