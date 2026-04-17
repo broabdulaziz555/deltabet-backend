@@ -19,4 +19,4 @@ COPY package*.json ./
 RUN mkdir -p uploads
 EXPOSE 3000
 ENTRYPOINT ["dumb-init", "--"]
-CMD ["node", "dist/index.js"]
+CMD npx prisma migrate deploy && node dist/index.js
