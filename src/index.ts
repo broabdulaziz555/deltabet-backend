@@ -25,7 +25,6 @@ async function bootstrap() {
 
     initSocket(httpServer);
     console.log('✅ Socket.io initialized');
-    await import('./scripts/seed-admin').then(m => m.default?.().catch(() => {}));
     await GameEngine.getInstance().start();
     console.log('✅ Game engine started');
 
