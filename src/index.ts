@@ -18,6 +18,7 @@ async function bootstrap() {
     // Run migrations first, wait for completion
     console.log('Running database migrations...');
     execSync('npx prisma db push --accept-data-loss', { stdio: 'inherit' });
+    execSync('npx tsx src/scripts/seed-admin.ts', { stdio: 'inherit' });
     console.log('✅ Database migrations done');
 
     await prisma.$connect();
