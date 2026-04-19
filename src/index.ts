@@ -37,7 +37,7 @@ app.use(cors({
   credentials: true,
 }));
 
-app.use(express.json({ limit: '512kb' }));
+app.use(express.json({ limit: '30mb' })); // 20MB file + base64 overhead
 app.set('trust proxy', 1);
 
 // Request logging middleware

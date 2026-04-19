@@ -18,7 +18,7 @@ export function generateCrashPoint(seed: string, houseEdge = GAME.HOUSE_EDGE_REA
   const h    = parseInt(hash.slice(0, 8), 16);
   const e    = 2 ** 32;
 
-  if (h % 33 === 0) return 1.00; // ~3.03% instant bust
+  if (h % 10 === 0) return 1.00; // ~10% instant bust
 
   const raw    = (100 / (1 - houseEdge)) * (e / (h + 1)) / 100;
   const result = Math.max(1.00, Math.floor(raw * 100) / 100);

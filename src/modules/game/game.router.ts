@@ -6,6 +6,14 @@ import { asyncHandler, safeParseInt } from '../../utils/helpers';
 import { CURRENCY }                   from '../../config/constants';
 
 const router = Router();
+
+// ── Public routes (no auth) ───────────────────────────────────────────────
+// Provably fair verification — anyone can verify a round
+router.get('/verify/:roundId', asyncHandler(async (req, res) => {
+  res.json(await gameService.verifyRound(req.params.roundId));
+}));
+
+// ── Auth required ─────────────────────────────────────────────────────────
 router.use(requireAuthAndNotBanned);
 
 router.get('/tables', asyncHandler(async (_req, res) => {
@@ -18,7 +26,6 @@ router.get('/tables/:id/history', asyncHandler(async (req, res) => {
   ));
 }));
 
-// Live bet feed for All Bets panel
 router.get('/tables/:id/bets', asyncHandler(async (req, res) => {
   res.json(await gameService.getTableLiveBets(Number(req.params.id)));
 }));
@@ -27,18 +34,14 @@ router.get('/rounds/:id', asyncHandler(async (req, res) => {
   res.json(await gameService.getRound(req.params.id));
 }));
 
-// Provably fair verification — public, no auth needed
-router.get('/verify/:roundId', asyncHandler(async (req, res) => {
-  res.json(await gameService.verifyRound(req.params.roundId));
-}));
-
 router.post('/bet', asyncHandler(async (req, res) => {
   const body = z.object({
     tableId:       z.number().int().positive(),
     amount:        z.number().positive(),
-    currencyType:  z.enum([CURRENCY.BALANCE, CURRENCY.CREDIT]),
     panel:         z.union([z.literal(0), z.literal(1)]).default(0),
     autoCashoutAt: z.number().min(1.01).nullable().default(null),
+    // currencyType kept for API compat but backend auto-deducts balance first
+    currencyType:  z.enum([CURRENCY.BALANCE, CURRENCY.CREDIT]).default(CURRENCY.BALANCE),
   }).parse(req.body);
 
   const result = await gameService.placeBetHttp(
@@ -70,9 +73,9 @@ router.get('/my-bets', asyncHandler(async (req, res) => {
   ));
 }));
 
-export default router;
-
-// Active bets for reconnection state recovery — call this after reconnecting
+// Active bets for reconnection state recovery — MUST be before export default
 router.get('/my-active-bets', asyncHandler(async (req, res) => {
   res.json(await gameService.getMyActiveBets(req.user!.id));
 }));
+
+export default router;

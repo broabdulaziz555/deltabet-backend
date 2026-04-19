@@ -39,9 +39,9 @@ export const GAME = {
   BETTING_PHASE_MS:  7_000,
   TICK_MS:           100,
   MAX_MULTIPLIER:    1_000,
-  HOUSE_EDGE_REAL:   0.05,
+  HOUSE_EDGE_REAL:   0.30,      // 30% house edge for real accounts
   MIN_BET:           2_000,       // 2,000 soums minimum
   MAX_BET:           5_000_000,
-  MAX_BETS_PER_USER: 2,           // max simultaneous bet panels per user per round
+  MAX_BETS_PER_USER: 1,           // single bet panel per round
   CRASH_COOLDOWN_MS: 3_000,
 } as const;

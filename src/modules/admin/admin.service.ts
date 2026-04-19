@@ -1,4 +1,4 @@
-import { CURRENCY } from '../../config/constants';
+import { CURRENCY } from '../config/constants';
 import { pool, withTransaction } from '../../db/pool';
 import { writeLedger } from '../wallet/wallet.service';
 import { AppError, paginate, paginatedResponse } from '../../utils/helpers';
@@ -152,7 +152,7 @@ export async function adjustBalance(
 
     await client.query(
       `INSERT INTO admin_logs (admin, action, target_user, details) VALUES ($1, 'adjust_balance', $2, $3)`,
-      [adminUsername, id, JSON.stringify({ type, amount, currency, note })]
+      [adminUsername, id, JSON.stringify({ type, amount, note })]
     );
 
     return { success: true, balance: parseFloat(ur[0].balance), credit: parseFloat(ur[0].credit) };

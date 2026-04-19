@@ -277,20 +277,29 @@ export class TableLoop extends EventEmitter {
         let newBalance = balance;
         let newCredit  = credit;
 
-        if (currencyType === CURRENCY.BALANCE) {
-          if (balance < amount) throw new Error('Insufficient balance');
+        // Combined wallet: deduct from balance first, overflow into credit
+        if (balance + credit < amount) throw new Error('Insufficient funds');
+
+        if (balance >= amount) {
+          // Enough in balance — use only balance
           await client.query(
             'UPDATE users SET balance = balance - $1, updated_at = now() WHERE id = $2', [amount, userId]
           );
           newBalance = balance - amount;
           await writeLedger(client, userId, 'bet', CURRENCY.BALANCE, -amount, newBalance);
         } else {
-          if (credit < amount) throw new Error('Insufficient bonus credit');
+          // Use all balance, remainder from credit
+          const fromCredit = amount - balance;
           await client.query(
-            'UPDATE users SET credit = credit - $1, updated_at = now() WHERE id = $2', [amount, userId]
+            'UPDATE users SET balance = 0, credit = credit - $1, updated_at = now() WHERE id = $2',
+            [fromCredit, userId]
           );
-          newCredit = credit - amount;
-          await writeLedger(client, userId, 'bet', CURRENCY.CREDIT, -amount, newCredit);
+          newBalance = 0;
+          newCredit  = credit - fromCredit;
+          if (balance > 0) {
+            await writeLedger(client, userId, 'bet', CURRENCY.BALANCE, -balance, 0);
+          }
+          await writeLedger(client, userId, 'bet', CURRENCY.CREDIT, -fromCredit, newCredit);
         }
 
         const { rows: br } = await client.query(
@@ -311,6 +320,7 @@ export class TableLoop extends EventEmitter {
       this.emit('bet_placed', {
         tableId, userId, username, amount, panel, currencyType,
         autoCashoutAt,
+        betId:      result.betId,   // needed by public bet feed
         newBalance: result.newBalance,
         newCredit:  result.newCredit,
       });

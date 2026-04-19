@@ -238,12 +238,11 @@ async function handleClientMessage(ws: AuthedWs, msg: ClientMsg): Promise<void> 
     case 'BET': {
       const tableId      = Number(msg.tableId);
       const amount       = Number(msg.amount);
-      const currencyType = msg.currencyType as string;
+      const currencyType = (msg.currencyType as string) || 'balance';
       const panel        = (Number(msg.panel ?? 0)) as 0 | 1;
       const autoCashoutAt = msg.autoCashoutAt != null ? Number(msg.autoCashoutAt) : null;
 
       if (!tableId || !amount)                                       throw new Error('tableId and amount required');
-      if (currencyType !== 'balance' && currencyType !== 'credit')   throw new Error('currencyType must be balance or credit');
       if (panel !== 0 && panel !== 1)                                 throw new Error('panel must be 0 or 1');
 
       const table = gameManager.getTable(tableId);

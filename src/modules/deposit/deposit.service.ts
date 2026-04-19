@@ -11,18 +11,20 @@ export async function createDeposit(
   userId:        string,
   amount:        number,
   paymentMethod: string,
-  chequeRef:     string,
+  chequeFile:    string,   // base64 encoded file with data URI prefix
+  chequeFileName:string,   // original filename for display
   promoCode?:    string,
   lang:          Lang = 'ru'
 ) {
-  if (amount < LIMITS.MIN_DEPOSIT)                                   throw new AppError(400, t('minDeposit', lang));
-  if (amount > LIMITS.MAX_TRANSACTION)                               throw new AppError(400, 'Amount exceeds max limit');
+  if (amount < LIMITS.MIN_DEPOSIT)                                     throw new AppError(400, t('minDeposit', lang));
+  if (amount > LIMITS.MAX_TRANSACTION)                                 throw new AppError(400, 'Amount exceeds max limit');
   if (!(PAYMENT_METHODS as readonly string[]).includes(paymentMethod)) throw new AppError(400, 'Invalid payment method');
+  if (!chequeFile)                                                      throw new AppError(400, 'Receipt file is required');
 
   const { rows } = await pool.query(
-    `INSERT INTO deposits (user_id, amount_claimed, payment_method, cheque_ref, promo_code)
-     VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-    [userId, amount, paymentMethod, chequeRef, promoCode ?? null]
+    `INSERT INTO deposits (user_id, amount_claimed, payment_method, cheque_ref, cheque_file, promo_code)
+     VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, user_id, amount_claimed, payment_method, cheque_ref, status, created_at`,
+    [userId, amount, paymentMethod, chequeFileName, chequeFile, promoCode ?? null]
   );
   return rows[0];
 }

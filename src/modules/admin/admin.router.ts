@@ -112,6 +112,17 @@ router.get('/deposits/:id', asyncHandler(async (req, res) => {
   res.json(await adminService.adminGetDeposit(req.params.id));
 }));
 
+router.get('/deposits/:id/file', asyncHandler(async (req, res) => {
+  const { rows } = await pool.query(
+    'SELECT cheque_file, cheque_ref FROM deposits WHERE id = $1',
+    [req.params.id]
+  );
+  if (!rows[0] || !rows[0].cheque_file) {
+    res.status(404).json({ error: 'File not found' }); return;
+  }
+  res.json({ file: rows[0].cheque_file, filename: rows[0].cheque_ref });
+}));
+
 router.patch('/deposits/:id/approve', asyncHandler(async (req, res) => {
   const { amountActual } = z.object({ amountActual: z.number().positive() }).parse(req.body);
   res.json(await adminService.adminApproveDeposit(req.params.id, amountActual, req.admin!.username));

@@ -74,9 +74,9 @@ const T: Record<string, Record<Lang, string>> = {
     uz: 'Topilmadi',
   },
   betTooSmall: {
-    en: 'Minimum bet is 500 soums',
-    ru: 'Минимальная ставка — 500 сум',
-    uz: "Minimal stavka — 500 so'm",
+    en: 'Minimum bet is 2,000 soums',
+    ru: 'Минимальная ставка — 2 000 сум',
+    uz: "Minimal stavka — 2 000 so'm",
   },
   betTooLarge: {
     en: 'Maximum bet is 5,000,000 soums',

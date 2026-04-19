@@ -11,19 +11,11 @@ import { logger }        from '../../utils/logger';
 const SALT_ROUNDS = 10;
 
 // ─── Username validation ──────────────────────────────────────────────────────
+// Simple: 8–32 characters, anything allowed
 
-// Only allow letters (including Cyrillic), digits, underscore, hyphen
-// Prevents XSS characters like < > ' " & in usernames
-const USERNAME_RE = /^[\w\u0400-\u04FF-]{8,32}$/;
-
-function validateUsername(username: string, lang: Lang): void {
-  if (!USERNAME_RE.test(username)) {
-    throw new AppError(400, lang === 'ru'
-      ? 'Имя пользователя: 8–32 символа, только буквы, цифры, _ или -'
-      : lang === 'uz'
-      ? "Foydalanuvchi nomi: 8–32 belgi, faqat harflar, raqamlar, _ yoki -"
-      : 'Username: 8–32 chars, only letters, digits, _ or -'
-    );
+function validateUsername(username: string, _lang: Lang): void {
+  if (username.length < LIMITS.USERNAME_MIN || username.length > LIMITS.USERNAME_MAX) {
+    throw new AppError(400, `Username must be ${LIMITS.USERNAME_MIN}–${LIMITS.USERNAME_MAX} characters`);
   }
 }
 
