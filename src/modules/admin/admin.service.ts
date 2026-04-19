@@ -1,4 +1,4 @@
-import { CURRENCY } from '../config/constants';
+import { CURRENCY } from '../../config/constants';
 import { pool, withTransaction } from '../../db/pool';
 import { writeLedger } from '../wallet/wallet.service';
 import { AppError, paginate, paginatedResponse } from '../../utils/helpers';
