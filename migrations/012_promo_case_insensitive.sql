@@ -1,5 +1,6 @@
 -- Case-insensitive unique index on promo code
 -- Prevents duplicates like 'WELCOME' and 'welcome' being both inserted
+ALTER TABLE promo_codes DROP CONSTRAINT IF EXISTS promo_codes_code_key;
 DROP INDEX IF EXISTS promo_codes_code_key;
 
 -- Replace simple unique with case-insensitive unique
